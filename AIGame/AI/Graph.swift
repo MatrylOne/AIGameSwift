@@ -51,7 +51,7 @@ class Graph {
 class Node: CustomStringConvertible {
     // nodes links
     weak var parent: Node?
-    lazy var child = self.createChild()
+    var child: ContiguousArray<Node> = ContiguousArray()
     
     // properties
     let board: Board
@@ -71,6 +71,9 @@ class Node: CustomStringConvertible {
         self.mode = mode
         self.player = player
         self.tour = tour
+        
+        let emptySize = emptyIndices.count
+        child.reserveCapacity(emptySize)
     }
 
     func minMax(level: Int) -> Node {
@@ -82,6 +85,7 @@ class Node: CustomStringConvertible {
             var i = 0
             let empties = emptyIndices.count
             while i < empties{
+                createNextChild()
                 let calculated = child[i].minMax(level: level - 1)
                 if let _ = value {
                     if (mode == .min) {
@@ -114,6 +118,7 @@ class Node: CustomStringConvertible {
             var i = 0
             let empties = emptyIndices.count
             while i < empties && alpha < beta{
+                createNextChild()
                 let calculated = child[i].alphaBeta(level: level - 1, alpha: alpha, beta: beta)
                 let score = calculated.getScore()
                 if let _ = value {
@@ -157,29 +162,24 @@ class Node: CustomStringConvertible {
             node.board.checkPoints.last!.move == move
         }.first!
     }
-
-    private func createChild() -> ContiguousArray<Node> {
+    
+    private func createNextChild(){
         let emptySize = emptyIndices.count
         let nextMode: Minmax = mode == .max ? .min : .max
         let nextPlayer: Value = self.tour == .player1 ? .player2 : .player1
-
-        var child: ContiguousArray<Node> = ContiguousArray()
-        child.reserveCapacity(emptySize)
-
-        if (emptySize > 0) {
-            for i in 0..<emptySize {
-                var newBoard = Board(board: board)
-                newBoard.assign(move:Move(row: emptyIndices[i].0, col: emptyIndices[i].1, player: tour))
-                let newNode = Node(parent: self, board: newBoard, mode: nextMode, player: player, tour:nextPlayer)
-                if (self.parent == nil) {
-                    newNode.indexFromRoot = i
-                } else {
-                    newNode.indexFromRoot = self.indexFromRoot
-                }
-                child.append(newNode)
-            }
+        
+        let nextIndice = emptyIndices.removeFirst()
+        
+        var newBoard = Board(board: board)
+        newBoard.assign(move:Move(row: nextIndice.0, col: nextIndice.1, player: tour))
+        let newNode = Node(parent: self, board: newBoard, mode: nextMode, player: player, tour:nextPlayer)
+        if (self.parent == nil) {
+            newNode.indexFromRoot = child.count
+        } else {
+            newNode.indexFromRoot = self.indexFromRoot
         }
-        return child
+        child.append(newNode)
+        
     }
     
     var description: String {
