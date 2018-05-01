@@ -154,7 +154,7 @@ class Node: CustomStringConvertible {
 
     func findMove(move: Move) -> Node {
         return child.filter { (node: Node) -> Bool in
-            node.board.lastMove == move
+            node.board.checkPoints.last!.move == move
         }.first!
     }
 
@@ -169,7 +169,7 @@ class Node: CustomStringConvertible {
         if (emptySize > 0) {
             for i in 0..<emptySize {
                 var newBoard = Board(board: board)
-                newBoard.assign(row: emptyIndices[i].0, col: emptyIndices[i].1, player: tour)
+                newBoard.assign(move:Move(row: emptyIndices[i].0, col: emptyIndices[i].1, player: tour))
                 let newNode = Node(parent: self, board: newBoard, mode: nextMode, player: player, tour:nextPlayer)
                 if (self.parent == nil) {
                     newNode.indexFromRoot = i

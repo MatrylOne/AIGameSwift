@@ -14,11 +14,11 @@ enum Value: UInt8 {
     case player2 = 2
 }
 
-struct Board: CustomStringConvertible {
+class Board: CustomStringConvertible {
     public let size: Int
     public var board: [[Value]]
     public var scores: [Value:Int] = [Value.player1:0, Value.player2:0]
-    public var lastMove:Move = Move(row: -1, col: -1, player: .empty)
+    public var checkPoints:[(move:Move, scoreDiff:[Value:Int])]
 
     var description: String {
         var result: String = "";
@@ -34,13 +34,14 @@ struct Board: CustomStringConvertible {
     init(size: Int) {
         self.size = size
         board = Array(repeating: Array(repeating: Value.empty, count: size), count: size)
+        checkPoints = []
     }
 
     init(board: Board) {
         self.size = board.size
         self.board = board.board
         self.scores = board.scores
-        self.lastMove = board.lastMove
+        self.checkPoints = board.checkPoints
     }
 
     func getSign(row: Int, col: Int) -> String {
@@ -56,53 +57,58 @@ struct Board: CustomStringConvertible {
     }
 
     ///////////////////
-
-    mutating func assign(row: Int, col: Int, player: Value) {
-        if (board[row][col] == .empty) {
-            board[row][col] = player
-            givePoint(row: row, col: col, player: player)
-            self.lastMove = Move(row: row, col: col, player: player)
+    func assign(move:Move){
+        if (board[move.row][move.col] == .empty) {
+            board[move.row][move.col] = move.player
+            let scoresBackup = scores
+            givePoint(move:move)
+            let scoreDiff = [Value.player1: scores[Value.player1]! - scoresBackup[Value.player1]!,
+                             Value.player2: scores[Value.player2]! - scoresBackup[Value.player2]!]
+            checkPoints.append((move, scoreDiff))
         }
     }
-
-    mutating func assign(move:Move){
-        assign(row: move.row, col: move.col, player: move.player)
+    
+    func revert(){
+        let last = checkPoints.removeLast()
+        board[last.move.row][last.move.col] = .empty
+        scores[Value.player1]! -= last.scoreDiff[Value.player1]!
+        scores[Value.player2]! -= last.scoreDiff[Value.player2]!
     }
 
     /////// Checking
 
-    mutating func givePoint(row: Int, col: Int, player: Value) {
-        if (player != .empty) {
+    func givePoint(move:Move) {
+        if (move.player != .empty) {
 
-            if (isFullRow(row: row, col: col)) {
-                if scores[player] != nil{
-                    scores[player]! += countMaxRowScore(row: row, col: col)
+            if (isFullRow(row: move.row, col: move.col)) {
+                if scores[move.player] != nil{
+                    scores[move.player]! += countMaxRowScore(row: move.row, col: move.col)
                 }else{
-                    scores[player] = countMaxRowScore(row: row, col: col)
+                    scores[move.player] = countMaxRowScore(row: move.row, col: move.col)
                 }
             }
 
-            if (isFullCol(row: row, col: col)) {
-                if scores[player] != nil{
-                    scores[player]! += countMaxColScore(row: row, col: col)
+            if (isFullCol(row: move.row, col: move.col)) {
+                if scores[move.player] != nil{
+                    scores[move.player]! += countMaxColScore(row: move.row, col: move.col)
                 }else{
-                    scores[player] = countMaxRowScore(row: row, col: col)
+                    scores[move.player] = countMaxRowScore(row: move.row, col: move.col)
                 }
             }
 
-            if (isFullRising(row: row, col: col)) {
-                if scores[player] != nil{
-                    scores[player]! += countMaxRisingDiagonalScore(row: row, col: col)
+            if (isFullRising(row: move.row, col: move.col)) {
+                if scores[move.player] != nil{
+                    scores[move.player]! += countMaxRisingDiagonalScore(row: move.row, col: move.col)
                 }else{
-                    scores[player] = countMaxRowScore(row: row, col: col)
+                    scores[move.player] = countMaxRowScore(row: move.row, col: move.col)
                 }
             }
 
-            if (isFullFalling(row: row, col: col)) {
-                if scores[player] != nil{
-                    scores[player]! += countMaxFallingDiagonalScore(row: row, col: col)
+            if (isFullFalling(row: move.row, col: move.col)) {
+                if scores[move.player] != nil{
+                    scores[move.player]! += countMaxFallingDiagonalScore(row: move.row, col: move.col)
                 }else{
-                    scores[player] = countMaxRowScore(row: row, col: col)
+                    scores[move.player] = countMaxRowScore(row: move.row, col: move.col)
                 }
             }
         }

@@ -15,7 +15,7 @@ public func randomVsMinMax(size:Int){
     var emptyIndexes = board.getEmptyIndices()
     while(emptyIndexes.count != 0){
         let ai = graph.alphaBeta(level: 5)
-        let secondMove = ai.board.lastMove
+        let secondMove = ai.board.checkPoints.last!.move
         board.assign(move: secondMove)
         
         print(board)
@@ -68,7 +68,7 @@ public func play(size:Int) {
         let lastRow = Int(readLine()!)!
         print("Player \(player) kolumna : ")
         let lastCol = Int(readLine()!)!
-        board.assign(row: lastRow, col: lastCol, player: player)
+        board.assign(move:Move(row: lastRow, col: lastCol, player: player))
         
         if (player == .player1) {
             player = .player2
@@ -85,7 +85,7 @@ public func minMax(size:Int){
     print(best.board)
     print(best.board.scores)
     print(best.getScore())
-    print(best.board.lastMove)
+    print(best.board.checkPoints.last!.move)
     
 }
 
@@ -96,7 +96,7 @@ public func aiVSai(size:Int){
     while(emptyIndexes.count != 0){
         let ai = Graph(board: board, mode: .max, player: currentPlayer)
         let best = ai.alphaBeta(level: 5)
-        board.assign(move: best.board.lastMove)
+        board.assign(move: best.board.checkPoints.last!.move)
         currentPlayer = currentPlayer == .player1 ? .player2 : .player1
         ////////////////
         emptyIndexes = board.getEmptyIndices()
