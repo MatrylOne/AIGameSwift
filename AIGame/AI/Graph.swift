@@ -26,13 +26,16 @@ struct Move: Equatable {
 
 class Graph {
     var root: Node
+    var board:Board
 
     init(board: Board) {
-        root = Node(parent: nil, board: board, mode: Minmax.max, player: .player1, tour: .player1)
+        self.board = Board(board: board)
+        root = Node(parent: nil, board: &self.board, mode: Minmax.max, player: .player1, tour: .player1, move:Move(row: 0, col: 0, player: .empty))
     }
 
     init(board: Board, mode: Minmax, player: Value) {
-        root = Node(parent: nil, board: board, mode: mode, player: player, tour: player)
+        self.board = Board(board: board)
+        root = Node(parent: nil, board: &self.board, mode: mode, player: player, tour: player, move:Move(row: 0, col: 0, player: .empty))
     }
 
     func minMax(level: Int) -> Node {
@@ -54,8 +57,9 @@ class Node: CustomStringConvertible {
     var child: ContiguousArray<Node> = ContiguousArray()
     
     // properties
-    let board: Board
+    var board: Board
     let mode: Minmax
+    let move:Move
     let player: Value
     let tour: Value
     
@@ -65,15 +69,18 @@ class Node: CustomStringConvertible {
     // indices
     lazy var emptyIndices = board.getEmptyIndices()
 
-    init(parent: Node?, board: Board, mode: Minmax, player: Value, tour:Value) {
+    init(parent: Node?, board: inout Board, mode: Minmax, player: Value, tour:Value, move:Move) {
         self.parent = parent
         self.board = board
         self.mode = mode
         self.player = player
         self.tour = tour
+        self.move = move
         
         let emptySize = emptyIndices.count
         child.reserveCapacity(emptySize)
+        
+        board.assign(move: move)
     }
 
     func minMax(level: Int) -> Node {
@@ -87,6 +94,7 @@ class Node: CustomStringConvertible {
             while i < empties{
                 createNextChild()
                 let calculated = child[i].minMax(level: level - 1)
+                board.revert()
                 if let _ = value {
                     if (mode == .min) {
                         if calculated.getScore() < value!.getScore() {
@@ -121,11 +129,11 @@ class Node: CustomStringConvertible {
                 createNextChild()
                 let calculated = child[i].alphaBeta(level: level - 1, alpha: alpha, beta: beta)
                 let score = calculated.getScore()
+                print("Score = \(score)")
                 if let _ = value {
                     if mode == .min {
                         if score < value!.getScore() {
                             value = calculated
-                            
                             if score < beta{
                                 beta = score
                             }
@@ -147,6 +155,7 @@ class Node: CustomStringConvertible {
                     }
                 }
                 i += 1
+                board.revert()
             }
         }
         return value == nil ? self : value!
@@ -164,15 +173,13 @@ class Node: CustomStringConvertible {
     }
     
     private func createNextChild(){
-        let emptySize = emptyIndices.count
         let nextMode: Minmax = mode == .max ? .min : .max
         let nextPlayer: Value = self.tour == .player1 ? .player2 : .player1
         
         let nextIndice = emptyIndices.removeFirst()
         
-        var newBoard = Board(board: board)
-        newBoard.assign(move:Move(row: nextIndice.0, col: nextIndice.1, player: tour))
-        let newNode = Node(parent: self, board: newBoard, mode: nextMode, player: player, tour:nextPlayer)
+        let move = Move(row: nextIndice.0, col: nextIndice.1, player: tour)
+        let newNode = Node(parent: self, board: &board, mode: nextMode, player: player, tour:nextPlayer, move:move)
         if (self.parent == nil) {
             newNode.indexFromRoot = child.count
         } else {

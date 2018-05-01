@@ -69,10 +69,14 @@ class Board: CustomStringConvertible {
     }
     
     func revert(){
-        let last = checkPoints.removeLast()
-        board[last.move.row][last.move.col] = .empty
-        scores[Value.player1]! -= last.scoreDiff[Value.player1]!
-        scores[Value.player2]! -= last.scoreDiff[Value.player2]!
+        if checkPoints.count > 0{
+            let last = checkPoints.removeLast()
+            board[last.move.row][last.move.col] = .empty
+            scores[Value.player1]! -= last.scoreDiff[Value.player1]!
+            scores[Value.player2]! -= last.scoreDiff[Value.player2]!
+        }else{
+            print("Cannot revert")
+        }
     }
 
     /////// Checking

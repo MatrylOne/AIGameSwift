@@ -14,8 +14,8 @@ public func randomVsMinMax(size:Int){
     
     var emptyIndexes = board.getEmptyIndices()
     while(emptyIndexes.count != 0){
-        let ai = graph.alphaBeta(level: 5)
-        let secondMove = ai.board.checkPoints.last!.move
+        let ai = graph.alphaBeta(level: 3)
+        let secondMove = ai.move
         board.assign(move: secondMove)
         
         print(board)
@@ -125,8 +125,8 @@ public func compareAI(size:Int, fill:Int, depth:Int){
     
     let resAB = ab.alphaBeta(level: depth)
     let stop = DispatchTime.now()
-    print(resAB)
+    print(resAB.move)
     print("MinMax time = \((stop.uptimeNanoseconds - start.uptimeNanoseconds)/1000000)")
 }
 
-randomVsMinMax(size: 8)
+compareAI(size: 8, fill: 55, depth: 4)
